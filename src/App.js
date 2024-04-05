@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import mapImage from "./srilankaMap.png"; // replace with your map image
 import axios from "axios";
+import { TooltipWrapper } from "./Tootltip";
+import io from 'socket.io-client';
 
 const SriLankaMap = () => {
   const [districtInfo, setDistrictInfo] = useState(null);
-  const [hoveredDistrict, setHoveredDistrict] = useState(null);
 
   const districts = [
     { id: 1, name: "Colombo", coordinates: [170, 530.9260] },
@@ -37,6 +38,38 @@ const SriLankaMap = () => {
 
   useEffect(()=>{
     loadDistrictData();
+
+    // Connect to the Socket.IO server
+    const socket = io("http://localhost:3030"); 
+
+    socket.on('wD', (data) => {
+
+      let wData = data ? data : [];
+
+      let weatherDtArray = [];
+
+      for (const dis of wData) {
+          let disObj = districts.find((d) => d.id === dis.WS_id)
+
+          if(disObj){
+            let obj = {
+              ...disObj,
+              dateTime: dis.dateTime,
+              temperature: dis.temperature,
+              humidity: dis.humidity,
+              airPressure: dis.airPressure,
+            }
+            weatherDtArray.push(obj);
+          }
+      }
+
+      setDistrictInfo(weatherDtArray);
+    });
+
+    // Cleanup function to disconnect the socket
+    return () => {
+        socket.disconnect();
+    };
   },[])
 
   
@@ -72,19 +105,23 @@ const SriLankaMap = () => {
   return (
      <div style={{  textAlign: "center", position: "relative" }}>
       <svg style={{zIndex:"100", position:"absolute", height: "100vh", width: "37vw"}}>
-        <g>
-        {districtInfo && districtInfo.map((district, index) => (
-           <g>
+        
+        {districtInfo && districtInfo.map((district, index) => {
+          return <React.Fragment key={index}>
+            <g>
+            <TooltipWrapper placement="bottom" text={[district.name+" District",<u/>,<br/>,<br/>,"Date & Time : "+new Date(district.dateTime).toLocaleString(),<br/>,"Temperature : "+district.temperature+"℃", <br/>,"Humidity : "+district.humidity+"%rh",<br/>,"Air Pressure : "+district.airPressure+"atm" ]} bcolor="black" >
               <circle 
-              key={index}
-              cx={district.coordinates[0]}
-              cy={district.coordinates[1]}
-              r="5"
-              fill="red"
-              />
+                key={index}
+                cx={district.coordinates[0]}
+                cy={district.coordinates[1]}
+                r="5"
+                fill="darkred"
+                />
+            </TooltipWrapper>   
           </g>
-        ))}
-        </g>
+          </React.Fragment>
+           
+        })}
       </svg>
       <img src={mapImage} alt="Sri Lanka map" style={{ height: "100vh" }} />
       {districtInfo && (
