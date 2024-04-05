@@ -40,7 +40,7 @@ const SriLankaMap = () => {
     loadDistrictData();
 
     // Connect to the Socket.IO server
-    const socket = io("http://localhost:3030"); 
+    const socket = io("https://webapi-backend-sy8r.onrender.com/"); 
 
     socket.on('wD', (data) => {
 
@@ -75,7 +75,7 @@ const SriLankaMap = () => {
   
   const loadDistrictData = async (name) => {
     try {
-      const response = await axios.get("http://localhost:3030/loadData");
+      const response = await axios.get("https://webapi-backend-sy8r.onrender.com/loadData");
 
       let wData = response.data ? response.data : [];
 
